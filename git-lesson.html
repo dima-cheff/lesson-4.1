@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Git и GitHub: пошаговая история проекта (v5)</title>
+<style>
+:root{--loc:#2563eb;--locb:#dbeafe;--stg:#ea580c;--stgb:#ffedd5;--com:#16a34a;--comb:#dcfce7;--gh:#7c3aed;--ghb:#ede9fe;--ink:#0f172a;--mut:#64748b;--bg:#eef2f7}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+.app{max-width:1080px;margin:0 auto;padding:12px;min-height:100vh;display:flex;flex-direction:column;gap:10px}
+.top{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--mut)}
+.bar{flex:1;height:7px;background:#dbe3ee;border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--loc),var(--stg),var(--com),var(--gh));transition:width .45s}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:#475569}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.card{background:#fff;border-radius:20px;padding:20px;box-shadow:0 4px 20px rgba(15,23,42,.08);flex:1;display:flex;flex-direction:column;gap:14px}
+h2{margin:0;font-size:clamp(23px,4.4vw,34px);letter-spacing:-.01em}
+.main{margin:0;font-size:clamp(15px,2.4vw,19px);font-weight:600;color:#1e3a8a;border-left:5px solid var(--loc);padding:4px 0 4px 12px;background:linear-gradient(90deg,#eff6ff,transparent)}
+.vis{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px;min-height:210px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;overflow-x:auto}
+.term{background:#0f172a;color:#e2e8f0;border-radius:12px;padding:12px 14px;font:14px/1.55 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.term .p{color:#4ade80}.term .o{color:#94a3b8}
+.say{font-size:clamp(15px,2.3vw,18px);line-height:1.55}
+.say code,.gloss code,.cmp code,.ops b,.cs code{font-family:ui-monospace,Menlo,Consolas,monospace;background:#eef2ff;color:#3730a3;padding:1px 6px;border-radius:6px;font-size:.92em}
+.ex{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:10px 14px;font-size:14.5px;line-height:1.5}
+.nav{display:flex;gap:10px;align-items:center;justify-content:space-between;position:sticky;bottom:8px;background:rgba(238,242,247,.92);backdrop-filter:blur(6px);padding:8px;border-radius:16px}
+.nav span{font-size:13px;color:var(--mut);text-align:center}
+button{font:600 16px system-ui;border:2px solid #cbd5e1;background:#fff;color:var(--ink);padding:11px 20px;border-radius:12px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--loc)}
+button:disabled{opacity:.4;cursor:default}
+button.pri{background:var(--loc);border-color:var(--loc);color:#fff}
+.hid{display:none!important}
+.pop{animation:pop .5s ease both}
+@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,.0)}50%{box-shadow:0 0 0 10px rgba(22,163,74,.25)}}
+/* files */
+.f{display:inline-flex;gap:6px;align-items:center;padding:7px 11px;border-radius:10px;border:2px solid;font:600 14px ui-monospace,Menlo,monospace;background:#fff;white-space:nowrap}
+.f.loc{border-color:var(--loc);color:#1e40af;background:var(--locb)}
+.f.stg{border-color:var(--stg);color:#9a3412;background:var(--stgb)}
+.f.com{border-color:var(--com);color:#166534;background:var(--comb)}
+.f.gray{border-color:#94a3b8;color:#475569;background:#f1f5f9}
+.f.mod{box-shadow:0 0 0 4px rgba(245,158,11,.4)}
+.tag{background:#fef3c7;color:#92400e;border-radius:8px;padding:3px 9px;font:600 13px ui-monospace,monospace}
+.mut{color:var(--mut);font-size:13px}
+/* zones */
+.zone{flex:1 1 220px;border:2px solid;border-radius:16px;padding:10px 12px;min-height:130px;display:flex;flex-direction:column;gap:8px;background:#fff}
+.zone h4{margin:0;font-size:15px}
+.zone h4 small{display:block;color:var(--mut);font-weight:500;font-size:12px;margin-top:1px}
+.zone.loc{border-color:var(--loc);background:var(--locb)}
+.zone.stg{border-color:var(--stg);background:var(--stgb)}
+.zone.com{border-color:var(--com);background:var(--comb)}
+.zone.gh{border-color:var(--gh);background:var(--ghb)}
+.zb{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}
+.ar{display:flex;flex-direction:column;align-items:center;font-size:12px;font-weight:700;color:#475569;text-align:center}
+.ar b{font-size:30px;line-height:1}
+@media(max-width:720px){.ar{flex:1 1 100%;flex-direction:row;gap:8px;justify-content:center}.ar b{transform:rotate(90deg)}}
+/* commits */
+.chain{display:flex;flex-wrap:wrap;align-items:flex-start}
+.pair{display:flex;align-items:flex-start}
+.ln{width:34px;height:4px;background:var(--com);margin-top:17px;border-radius:2px;flex:none}
+.ln.gh{background:var(--gh)}
+.node{display:flex;flex-direction:column;align-items:center;width:110px;text-align:center;gap:3px;flex:none}
+.dot{width:38px;height:38px;border-radius:50%;background:var(--com);color:#fff;display:grid;place-items:center;font-weight:700}
+.dot.sm{width:28px;height:28px;font-size:14px;flex:none}
+.node code{font-size:12px;color:var(--com);font-weight:700}
+.node small{font-size:12px;color:#334155;line-height:1.2}
+.node.gh .dot{background:var(--gh)}.node.gh code{color:var(--gh)}
+.node.new .dot{animation:glow 1.6s ease 2}
+.zone .node{width:80px}.zone .ln{width:14px}
+.pill{display:inline-block;font:700 11px ui-monospace,monospace;padding:2px 7px;border-radius:99px;margin-top:2px}
+.pill.m{background:var(--com);color:#fff}.pill.b{background:var(--stg);color:#fff}.pill.h{background:#0f172a;color:#fff}
+.vln{width:4px;height:22px;background:var(--com);margin:0 0 0 51px;border-radius:2px}
+/* misc blocks */
+.bubble{flex:1 1 220px;background:#fee2e2;border:2px solid #fca5a5;color:#991b1b;border-radius:16px;padding:12px 14px;font-weight:600}
+.dash{border-style:dashed!important}
+.ghost{opacity:.85}
+.ghost .dot{background:#fff;color:#94a3b8;border:3px dashed #94a3b8}
+.ghost small{color:#64748b}
+.warn{flex:1 1 100%;background:#fff7ed;border:2px solid #fdba74;border-radius:12px;padding:9px 13px;font-size:14px}
+.warn.ok{background:#f0fdf4;border-color:#86efac}
+.badge{flex:1 1 100%;text-align:center;font-weight:700;padding:8px 12px;border-radius:12px;background:var(--locb);color:#1e40af}
+.badge.o{background:var(--stgb);color:#9a3412}.badge.g{background:var(--comb);color:#166534}.badge.p{background:var(--ghb);color:#5b21b6}
+.cmp{display:flex;flex-wrap:wrap;gap:10px;flex:1 1 100%}
+.cmp>div{flex:1 1 240px;background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:10px 12px;font-size:14px}
+.gloss{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;width:100%}
+.gloss>div{background:#fff;border:1px solid #ddd6fe;border-radius:10px;padding:8px 10px;font-size:14px}
+.ops{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;width:100%}
+.op{border:2px solid;border-radius:12px;padding:9px 12px;font-size:14px;background:#fff}
+.op b{display:block;font-size:16px;margin-bottom:2px;width:max-content}
+.op em{display:block;font-style:normal;margin-top:4px;font-weight:700}
+.op.loc{border-color:var(--loc)}.op.gh{border-color:var(--gh)}
+.bl{font-size:14.5px;line-height:1.7}
+/* timeline */
+.vl{border-left:4px solid var(--com);margin-left:14px;padding-left:18px;display:flex;flex-direction:column;gap:14px}
+.vr{display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative}
+.vr .dot{margin-left:-34px;outline:4px solid #f8fafc}
+.vr code{font-weight:700;color:var(--com)}
+.vr em{font-style:normal;background:#0f172a;color:#fff;border-radius:99px;font:700 11px ui-monospace,monospace;padding:2px 8px}
+/* cheat sheet */
+.cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px;width:100%}
+.cs>div{border:2px solid;border-radius:14px;padding:10px 12px;background:#fff}
+.cs h4{margin:0 0 6px;font-size:15px}
+.cs p{margin:5px 0;font-size:13.5px;line-height:1.4}
+.cs .loc{border-color:var(--loc)}.cs .stg{border-color:var(--stg)}.cs .com{border-color:var(--com)}.cs .gh{border-color:var(--gh)}
+/* quiz */
+.qz{width:100%;max-width:720px}
+.qz h3{margin:6px 0 12px;font-size:20px}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;font-weight:500;font-size:16px}
+.opt.ok{background:#dcfce7;border-color:var(--com)}.opt.no{background:#fee2e2;border-color:#dc2626}
+.fb{margin-top:10px;font-size:15px;line-height:1.5}
+.res{text-align:center;font-size:24px;font-weight:700;line-height:2}
+.sc{flex:0 1 240px;min-width:210px;background:#1e1e1e;color:#ccc;border-radius:10px;padding:8px 0 10px;font:13px system-ui}
+.sch{font-size:10.5px;letter-spacing:.06em;padding:0 12px 6px;color:#aaa}
+.sct{background:#2a2d2e;padding:3px 12px;font-weight:700;font-size:11px;text-transform:uppercase;color:#ddd;display:flex;justify-content:space-between;margin-top:4px}
+.sct i{font-style:normal;background:#4d4d4d;border-radius:99px;padding:0 7px}
+.sr{display:flex;justify-content:space-between;padding:3px 12px}
+.sr b.u,.sr b.a{color:#73c991}.sr b.m{color:#e2c08d}
+.mut2{color:#888;font-style:italic}
+.bd{margin-left:5px;font-size:11px;background:var(--loc);color:#fff;border-radius:6px;padding:0 6px}
+.bd.o{background:var(--stg)}.bd.ck{background:transparent;color:var(--com)}.bd.sm{background:transparent;color:#9a3412;font-weight:500;padding:0}
+.f.dim{opacity:.55}
+.chg{animation:pulse 1.2s ease 2}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,0)}50%{box-shadow:0 0 0 8px rgba(37,99,235,.3)}}
+.ar.on{color:var(--stg)}.ar.on.c{color:var(--com)}
+.code{font:13px/1.55 ui-monospace,Menlo,monospace;background:#0f172a;color:#e2e8f0;border-radius:10px;padding:8px 0;flex:1 1 100%;overflow-x:auto}
+.code .cl{display:block;white-space:pre;padding:0 12px}
+.code .del{color:#fca5a5;background:rgba(220,38,38,.2)}.code .add{color:#86efac;background:rgba(22,163,74,.22)}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex:1 1 100%;justify-content:center;font-size:14px}
+.flow span{background:#fff;border:2px solid #cbd5e1;border-radius:99px;padding:5px 12px;font-weight:600}
+.code .lbl{color:#94a3b8;font:12px system-ui;padding-bottom:3px}
+.two{display:flex;gap:10px;flex:1 1 100%;flex-wrap:wrap}.two .code{flex:1 1 240px}
+.op b{max-width:100%;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><b id="cnt"></b><div class="bar"><i id="pb"></i></div></div>
+  <div class="legend">
+    <span><i style="background:var(--loc)"></i>синий — локальная работа</span>
+    <span><i style="background:var(--stg)"></i>оранжевый — подготовлено (staging)</span>
+    <span><i style="background:var(--com)"></i>зелёный — коммиты</span>
+    <span><i style="background:var(--gh)"></i>фиолетовый — GitHub</span>
+  </div>
+  <div class="card" id="slide"></div>
+  <div class="nav"><button id="back">← Назад</button><span id="stp"></span><button id="next" class="pri">Далее →</button></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const d=(a,b=a)=>{const r=[];for(let i=a;i<=b;i++)r.push(i);return `data-s="${r.join(',')}"`};
+const up=a=>d(a,9);
+const U='&lt;URL-репозитория&gt;';
+
+/* ---------- строительные блоки ---------- */
+const F=(n,c='loc',x='')=>`<span class="f ${c} ${x}">📄 ${n}${x.includes('mod')?' ✎':''}</span>`;
+const N=(id,m,x='')=>`<div class="node ${x}"><div class="dot">✓</div><code>${id}</code><small>${m}</small></div>`;
+const CH=(arr,gh)=>`<div class="chain">${arr.map((c,i)=>`<div class="pair" ${c[2]||''}>${i?`<div class="ln ${gh?'gh':''}"></div>`:''}${N(c[0],c[1],(gh?'gh ':'')+(c[3]||''))}</div>`).join('')}</div>`;
+const Z=(cls,title,sub,body,st='',a='')=>`<div class="zone ${cls}" style="${st}" ${a}><h4>${title}<small>${sub}</small></h4><div class="zb">${body}</div></div>`;
+const AR=(t,a='')=>`<div class="ar" ${a}><span>${t}</span><b>➜</b></div>`;
+
+/* ---------- настройки истории: меняй здесь, чтобы совпадало с твоим кодом ---------- */
+const CFG={
+  c1:['a1b2c3f','Добавил страницу и стили'],
+  c2:['d4e5f6a','Изменил цвет кнопки'],
+  c3:['f9a8b7c','Новая кнопка'],           // коммит в ветке feature/button
+  html:['<!DOCTYPE html>','<html lang="ru">','<head>','  <meta charset="UTF-8">','  <title>Моя визитка</title>','  <link rel="stylesheet" href="style.css">','</head>','<body>','  <h1>Привет! Это моя визитка</h1>','  <button class="btn">Написать мне</button>','</body>','</html>'],
+  css:['body {','  font-family: sans-serif;','}','.btn {','  background: blue;','}'],
+  cssLine:4, cssNew:'  background: green;',   // какая строка style.css меняется (счёт с 0) и на что
+  branch:'feature/button'
+};
+const C1=CFG.c1,C2=CFG.c2,C3=CFG.c3;
+
+/* ---------- доска: три зоны + панель как в VS Code ---------- */
+const W=(a,b)=>({'index.html':a,'style.css':b});
+const ST={
+  init:{w:W('U','U'),s:{},c:[]},
+  add1:{w:W('S','U'),s:{'index.html':'A'},c:[]},
+  add2:{w:W('S','S'),s:{'index.html':'A','style.css':'A'},c:[]},
+  com1:{w:W('C','C'),s:{},c:[C1]},
+  mod:{w:W('C','M'),s:{},c:[C1]},
+  add3:{w:W('C','S'),s:{'style.css':'M'},c:[C1]},
+  com2:{w:W('C','C'),s:{},c:[C1,C2]}
+};
+function scp(st){
+  const un=Object.entries(st.w).filter(([n,k])=>k=='U'||k=='M'),sg=Object.entries(st.s);
+  const row=(n,k,c)=>`<div class="sr"><span>${n}</span><b class="${c}">${k}</b></div>`;
+  return `<div class="sc"><div class="sch">SOURCE CONTROL · как в VS Code</div>`+
+    (sg.length?`<div class="sct">Staged Changes <i>${sg.length}</i></div>${sg.map(([n,k])=>row(n,k,'a')).join('')}`:'')+
+    `<div class="sct">Changes <i>${un.length}</i></div>`+
+    (un.length?un.map(([n,k])=>row(n,k,k=='U'?'u':'m')).join(''):'<div class="sr mut2">нет изменений</div>')+`</div>`;
+}
+function board(st,o={}){
+  const chg=n=>o.chg&&o.chg.includes(n)?'chg':'';
+  const wf=Object.entries(st.w).map(([n,k])=>{
+    const ch=k=='U'||k=='M';
+    return `<span class="f ${ch?'loc':k=='S'?'loc dim':'gray'} ${chg(n)}">📄 ${n}${ch?`<b class="bd">${k}</b>`:k=='S'?'<b class="bd sm">→ staging</b>':'<b class="bd ck">✓</b>'}</span>`}).join('');
+  const sf=Object.entries(st.s).map(([n,k])=>`<span class="f stg ${chg(n)}">📄 ${n}<b class="bd o">${k}</b></span>`).join('')||'<span class="mut">пусто</span>';
+  const cm=st.c.length?CH(st.c.map((x,i)=>[x[0],x[1],'',(o.newc&&i==st.c.length-1)?'new':''])):'<span class="mut">коммитов пока нет<br>(No commits yet)</span>';
+  return Z('loc','🖥 Working directory','рабочая папка · в VS Code: Changes',wf,'flex:1 1 200px')+
+    `<div class="ar ${o.ar=='add'?'on':''}"><span>git add</span><b>➜</b></div>`+
+    Z('stg','📦 Staging area','подготовлено · Staged Changes',sf,'flex:1 1 200px')+
+    `<div class="ar c ${o.ar=='commit'?'on':''}"><span>git commit</span><b>➜</b></div>`+
+    Z('com','🗄 Repository','локальная история',cm,'flex:1 1 200px')+
+    scp(st)+(o.extra||'');
+}
+const GHNOTE=Z('gh','☁️ GitHub','пока без изменений','<span class="mut">Коммиты только на твоём компьютере: на GitHub ничего не отправлялось.</span>','flex:1 1 100%;border-style:dashed;min-height:auto');
+const CSSB=CFG.css,CL=CFG.cssLine,CSSA=CSSB.map((l,i)=>i==CL?CFG.cssNew:l);
+const CODE=(lbl,lines)=>`<div class="code"><span class="cl lbl">${lbl}</span>${lines.map(l=>`<span class="cl ${l[1]||''}">${esc(l[0])}</span>`).join('')}</div>`;
+const h0=Math.max(0,CL-3),h1=Math.min(CSSB.length-1,CL+3);
+const HUNK=`@@ -${h0+1},${h1-h0+1} +${h0+1},${h1-h0+1} @@`;
+const DIFF=`<div class="code"><span class="cl">${esc('diff --git a/style.css b/style.css')}</span><span class="cl">${HUNK}</span>`+CSSB.slice(h0,h1+1).map((l,j)=>h0+j==CL?`<span class="cl del">-${esc(l)}</span><span class="cl add">+${esc(CFG.cssNew)}</span>`:`<span class="cl"> ${esc(l)}</span>`).join('')+`</div>`;
+const BEFORE=CODE('style.css — как сохранён в первом коммите',CSSB.map(l=>[l]));
+const AFTER=CODE('style.css — после твоей правки',CSSA.map((l,i)=>[l,i==CL?'add':'']));
+const SNIP='<div class="two">'+BEFORE+AFTER+'</div>';
+const INIT='<div class="two">'+CODE('index.html',CFG.html.map(l=>[l]))+CODE('style.css',CSSB.map(l=>[l]))+'</div>';
+
+/* ---------- слайды ---------- */
+const S=[
+
+/* 1 */
+{t:'1. Проблема: проект без Git',m:'Файлов много, а какая версия настоящая — непонятно.',n:2,
+ v:Z('loc','📁 my-site','папка проекта без Git',[F('index.html','gray'),F('index-final.html','gray'),F('index-final-2.html','gray'),F('style.css','gray'),F('style-new.css','gray'),F('style-final-real.css','gray')].join(''),'flex:2 1 320px')+
+   `<div class="bubble" ${d(1)}>❓ Что менялось? Какая версия рабочая? Как вернуться к состоянию «позавчера»?</div>`,
+ c:[null,null],
+ s:['Так выглядит папка, когда версии сохраняют копированием файлов. «final», «final-2», «final-real» быстро превращаются в путаницу.','Заказчик просит вернуть сайт как был позавчера. Какой из файлов нужный? Для таких случаев и придумали Git.'],
+ e:'Наш проект — сайт из двух файлов: <b>index.html</b> и <b>style.css</b>. Дальше создаём его историю с нуля.'},
+
+/* 2 */
+{t:'2. Зачем нужен Git',m:'Git хранит историю проекта, показывает изменения и позволяет вернуться назад.',n:4,
+ v:`<div class="chain" style="flex:1 1 100%;justify-content:center">
+   <div class="pair" ${up(0)}>${N('•','Версия 1')}</div>
+   <div class="pair" ${up(0)}><div class="ln"></div>${N('•','Версия 2')}</div>
+   <div class="pair" ${up(0)}><div class="ln"></div>${N('•','Версия 3')}</div>
+   <div class="pair" ${d(3)}><div class="ln" style="background:#94a3b8"></div><div class="node ghost"><div class="dot">✎</div><small>правки без коммита</small></div></div></div>
+   <div class="cmp">
+    <div ${up(0)}>📜 <b>История.</b> Git хранит контрольные точки проекта — коммиты.</div>
+    <div ${up(1)}>🔍 <b>Что менялось.</b> Видно, какие файлы и строки изменились.</div>
+    <div ${up(2)}>⏪ <b>Возврат.</b> Сломал сайт — можно вернуться к рабочей версии.</div>
+    <div ${d(3)}>⚠️ <b>Не автосохранение.</b> Точку создаёшь сам командой commit.</div></div>`,
+ c:[null,null,null,null],
+ s:['<b>Коммит (commit)</b> — сохранённое состояние всех файлов проекта в какой-то момент. Из коммитов складывается история.','Между точками Git умеет показать разницу: какие файлы и строки поменялись.','Если что-то сломалось, можно вернуться к рабочей версии, а не искать «final-real».','Но Git не сохраняет каждую правку сам. Пока ты не сделал коммит, изменения в историю не попадают.'],
+ e:'Дальше мы начинаем с пустой папки и сами создаём историю своего сайта: сначала первый коммит, потом правка и второй коммит.'},
+
+/* 3 */
+{t:'3. Создаём репозиторий: git init',m:'После git init Git видит файлы, но пока не следит за ними — они в Changes со значком U.',n:3,
+ r:K=>K==0?Z('loc','📁 my-site','обычная папка',F('index.html','gray')+F('style.css','gray'),'flex:1 1 300px')+INIT
+   :K==1?Z('loc','📁 my-site','папка с репозиторием Git',F('index.html','gray')+F('style.css','gray'),'flex:1 1 260px')+
+     Z('com dash','📂 .git','скрытая служебная папка','<span class="mut">Здесь Git хранит историю и служебные данные. Коммитов пока нет.</span>','flex:1 1 260px')
+   :board(ST.init,{chg:['index.html','style.css']}),
+ c:[null,{c:'git init',o:'Initialized empty Git repository in my-site/.git/'},{c:'git status',o:'On branch main\n\nNo commits yet\n\nUntracked files:\n        index.html\n        style.css\n\nnothing added to commit but untracked files present'}],
+ s:['Обычная папка с двумя файлами. Git о ней пока ничего не знает.','<b>Репозиторий (repository)</b> — проект вместе с его историей. <code>git init</code> создаёт скрытую папку <code>.git</code>. Файлы в историю он <b>не добавил</b>: коммитов ещё нет.','<code>git status</code>: оба файла <b>Untracked</b> — Git их видит, но не отслеживает. В VS Code они в разделе <b>Changes</b> со значком <b>U</b>.'],
+ e:'Заходим в <b>my-site</b>, выполняем <code>git init</code> и сразу проверяем <code>git status</code>.'},
+
+/* 4 */
+{t:'4. Три зоны и git add',m:'Изменение идёт так: рабочая папка → staging area → repository.',n:3,
+ r:K=>board(K==0?ST.init:K==1?ST.add1:ST.add2,{ar:K?'add':'',chg:K==1?['index.html']:K==2?['style.css']:[]}),
+ c:[null,{c:'git add index.html'},{c:'git add .'}],
+ s:['<b>Working directory</b> — рабочая папка, где ты правишь файлы (в VS Code — <b>Changes</b>). <b>Staging area</b> — «коробка» с изменениями для следующего коммита (<b>Staged Changes</b>). <b>Repository</b> — история коммитов. Сейчас оба файла только в рабочей папке.','<code>git add index.html</code> кладёт файл в staging area. В VS Code он перешёл в <b>Staged Changes</b> со значком <b>A</b> (added). <b>style.css</b> остался в Changes.','Точка означает «все изменения сразу»: <b>style.css</b> также переместился в staging. Перед <code>git add .</code> проверяй <code>git status</code>, чтобы не добавить лишнее.'],
+ e:'Staging area — не отдельная папка на диске, а область подготовки, которой управляет Git. Файлы остаются в папке на своих местах.'},
+
+/* 5 */
+{t:'5. Первый коммит',m:'git commit сохраняет подготовленное в локальной истории. На GitHub он ничего не отправляет.',n:3,
+ r:K=>board(K==0?ST.add2:ST.com1,{ar:K==1?'commit':'',newc:K==1})+GHNOTE,
+ c:[{c:'git status',o:'On branch main\n\nNo commits yet\n\nChanges to be committed:\n        new file:   index.html\n        new file:   style.css'},{c:`git commit -m "${C1[1]}"`,o:`[main (root-commit) ${C1[0]}] ${C1[1]}\n 2 files changed, 24 insertions(+)\n create mode 100644 index.html\n create mode 100644 style.css`},{c:'git log --oneline',o:`${C1[0]} (HEAD -> main) ${C1[1]}`}],
+ s:['Оба файла в <b>Changes to be committed</b> — подготовлены.','Появилась первая контрольная точка. Раздел Changes в VS Code опустел: все изменения теперь в истории. Сообщение в кавычках коротко объясняет, что сохранили.','<code>git log --oneline</code> показывает историю: идентификатор и сообщение. <b>HEAD</b> — «ты сейчас здесь». Идентификаторы в примерах вымышленные, у тебя будут свои.'],
+ e:`Первый коммит «${C1[1]}» сохранил оба файла сразу.`},
+
+/* 6 */
+{t:'6. Меняем файл',m:'После правки отслеживаемый файл получает статус M — modified.',n:3,
+ r:K=>board(ST.mod,{chg:['style.css'],extra:K==0?SNIP:K==2?DIFF:''}),
+ c:[null,{c:'git status',o:'On branch main\nChanges not staged for commit:\n        modified:   style.css\n\nno changes added to commit'},{c:'git diff',o:`-${CSSB[CL]}\n+${CFG.cssNew}`}],
+ s:['Было (в коммите) и стало (после правки): поменяли одну строку в <b>style.css</b>. Файл уже отслеживается, поэтому он <b>modified</b>: в VS Code в Changes со значком <b>M</b>.','<code>git status</code>: <b>style.css</b> изменён, но не подготовлен к коммиту (not staged). Команда только показывает состояние и ничего не сохраняет.','<code>git diff</code> показывает, какие строки поменялись: красная была, зелёная стала. Показывает изменения, которые ещё не в staging.'],
+ e:'Меняем одну строку в <b>style.css</b>. <b>index.html</b> не тронут и остаётся чистым.'},
+
+/* 7 */
+{t:'7. Второй коммит',m:'Цикл работы: правка → git add → git commit.',n:3,
+ r:K=>board(K==0?ST.add3:ST.com2,{ar:K==0?'add':K==1?'commit':'',newc:K==1,chg:K==0?['style.css']:[]}),
+ c:[{c:'git add style.css'},{c:`git commit -m "${C2[1]}"`,o:`[main ${C2[0]}] ${C2[1]}\n 1 file changed, 1 insertion(+), 1 deletion(-)`},{c:'git log --oneline',o:`${C2[0]} (HEAD -> main) ${C2[1]}\n${C1[0]} ${C1[1]}`}],
+ s:['<code>git add style.css</code> подготовил изменение. В VS Code файл переехал из Changes в Staged Changes (значок M).','Коммит создан: в истории уже две точки. Changes снова пуст — рабочая папка совпадает с последним коммитом.',`В истории два коммита: «${C1[1]}» и «${C2[1]}». Новые коммиты всегда сверху.`],
+ e:'Теперь у сайта есть история из двух коммитов, и к первой версии можно вернуться.'},
+
+/* 8 */
+{t:'8. Git и GitHub — не одно и то же',m:'Git — инструмент контроля версий. GitHub — онлайн-платформа для хранения Git-репозиториев и совместной работы.',n:3,
+ v:Z('loc','💻 Git — на твоём компьютере','работает локально, интернет не нужен',`<div class="bl">📄 файлы проекта<br>🟢—🟢 история: ${C1[1]}, ${C2[1]}<br>🌿 ветки</div>`,'flex:1 1 250px')+
+   `<div class="ar" ${up(2)}><span>push ➜</span><b>⇄</b><span>⬅ pull / clone</span></div>`+
+   Z('gh','☁️ GitHub — в интернете','сайт github.com',`<div class="bl">📦 удалённый репозиторий<br>🔗 копия истории проекта<br>👥 совместная работа, можно поделиться кодом</div>`,'flex:1 1 250px',up(1))+
+   `<div class="warn ok" ${d(2)}>✅ Всё, что мы делали до сих пор — <code>init</code>, <code>add</code>, <code>commit</code>, <code>log</code> — работало без GitHub и без интернета.</div>`,
+ c:[null,null,null],
+ s:['<b>Git</b> — программа на твоём компьютере. Она ведёт историю: коммиты и ветки.','<b>GitHub</b> — сайт, где можно хранить копию этой истории онлайн, делиться кодом и работать вместе.','Между ними коммиты ходят командами: <code>push</code> — отправить на GitHub, <code>pull</code> — получить новые коммиты. А если проекта нет локально, то с помощью <code>clone</code> клонируем себе копию репозитория.'],
+ e:'Наша история из двух коммитов пока живёт только на компьютере. Сейчас отправим её на GitHub.'},
+
+/* 9 */
+{t:'9. Отправляем проект на GitHub',m:'push отправляет локальные коммиты в удалённый репозиторий.',n:4,
+ v:Z('loc','💻 Локальный репозиторий','на компьютере',CH([C1,C2])+`<span class="pill m" ${d(1,3)}>ветка main</span>`,'flex:1 1 260px')+
+   `<div class="ar" ${d(2)}><span>origin 🔗</span><b>⟷</b></div>`+
+   `<div class="ar" ${d(3)}><span>git push</span><b>➜</b></div>`+
+   Z('gh','☁️ GitHub','my-site · удалённый репозиторий',`<span class="mut" ${d(0,2)}>пусто — репозиторий только что создан на сайте</span><span ${d(3)}>${CH([C1,C2],1)}</span>`,'flex:1 1 260px')+
+   `<div class="gloss" ${d(3)}>
+     <div><code>branch -M main</code> — переименовать текущую ветку в main</div>
+     <div><code>origin</code> — принятое имя удалённого репозитория (его можно изменить)</div>
+     <div><code>push</code> — отправить коммиты в удалённый репозиторий</div>
+     <div><code>-u</code> — запомнить связь main ↔ origin/main, чтобы дальше хватало просто <code>git push</code></div>
+   </div>`,
+ c:[null,{c:'git branch -M main'},{c:'git remote add origin <URL-репозитория>'},{c:'git push -u origin main',o:"To github.com:you/my-site.git\n * [new branch]      main -> main\nbranch 'main' set up to track 'origin/main'."}],
+ s:['Сначала на github.com создаём <b>пустой</b> репозиторий. Это отдельное действие — <code>git init</code> его не делает.','<code>git branch -M main</code> переименовывает текущую ветку в <b>main</b>. На GitHub основная ветка называется main, а Git на некоторых компьютерах создаёт master. Если у тебя уже main — ничего не изменится. <code>-M</code> — переименовать принудительно.',`<code>git remote add origin ${U}</code> говорит Git: «удалённый репозиторий зовётся origin, вот его адрес». Пока ничего не отправлено.`,'<code>git push -u origin main</code> отправляет коммиты ветки main на GitHub. Теперь обе точки истории есть и онлайн.'],
+ e:'Оба коммита нашего сайта появились на GitHub. Ссылкой на репозиторий можно поделиться.'},
+
+/* 10 */
+{t:'10. Получаем проект с GitHub',m:'clone скачивает проект вместе с историей. pull подтягивает новые изменения.',n:3,
+ v:Z('gh','☁️ GitHub','my-site',CH([C1,C2],1),'flex:1 1 260px')+
+   `<div class="ar" ${up(1)}><span>git clone</span><b>➜</b></div>`+
+   Z('loc','💻 Компьютер нового разработчика','',`<span class="mut" ${d(0)}>папки my-site здесь ещё нет</span><span ${up(1)}>${F('index.html','loc')}${F('style.css','loc')}</span><span ${up(1)}>${CH([C1,C2])}</span>`,'flex:1 1 260px')+
+   `<div class="cmp" ${d(2)}><div><code>git clone</code> — если проекта нет локально, клонируем себе копию репозитория</div><div><code>git pull</code> — получить новые изменения и влить их в текущую ветку</div></div>`,
+ c:[null,{c:'git clone <URL-репозитория>',o:"Cloning into 'my-site'..."},{c:'git pull',o:'Already up to date.'}],
+ s:['У нового разработчика проекта на компьютере нет.','<code>git clone</code> скачивает файлы <b>и всю историю</b>. Появляется готовый локальный репозиторий с двумя коммитами.','<code>clone</code> делают один раз. Потом, чтобы получить чужие новые коммиты, используют <code>pull</code>.'],
+ e:'Коллега клонирует наш сайт и сразу видит оба коммита.'},
+
+/* 11 */
+{t:'11. Ветки',m:'Ветка — отдельная линия развития истории, а не копия всей папки.',n:4,
+ v:`<div style="min-width:420px"><div class="chain">
+     <div class="pair">${N(...C1)}</div>
+     <div class="pair"><div class="ln"></div><div style="display:flex;flex-direction:column;align-items:center">${N(...C2)}
+       <div ${d(0)}><span class="pill m">main</span> <span class="pill h">HEAD</span></div>
+       <div ${d(1)}><span class="pill m">main</span><br><span class="pill b">${CFG.branch}</span> <span class="pill h">HEAD</span></div>
+       <div ${d(2)}><span class="pill m">main</span></div>
+       <div ${d(3)}><span class="pill m">main</span> <span class="pill h">HEAD</span></div></div></div>
+   </div>
+   <div ${up(2)} style="margin-left:144px"><div class="vln"></div>${N(C3[0],C3[1],'new')}<div style="text-align:center;width:110px"><span class="pill b">${CFG.branch}</span> <span class="pill h" ${d(2)}>HEAD</span></div></div></div>
+   <div class="ops" ${up(1)}>
+     <div class="op loc"><b>git switch -c ${CFG.branch}</b>создать новую ветку и сразу переключиться на неё<em>то же: git checkout -b ${CFG.branch}</em></div>
+     <div class="op gh" ${up(3)}><b>git switch main</b>переключиться на уже существующую ветку, без создания<em>то же: git checkout main</em></div>
+   </div>
+   <div class="warn" ${up(1)}>🆚 <b>switch</b> — новая команда (Git 2.23+), нужна только для работы с ветками, поэтому понятнее. <b>checkout</b> — более старая команда. Она тоже переключает ветки, но умеет и другие вещи, из-за чего новичкам в ней сложнее разобраться. Обе команды работают, в старых инструкциях чаще встречается checkout.</div>`,
+ c:[null,{c:`git switch -c ${CFG.branch}`,o:`Switched to a new branch '${CFG.branch}'`},{c:`git add style.css\ngit commit -m "${C3[1]}"`,o:`[${CFG.branch} ${C3[0]}] ${C3[1]}`},{c:'git switch main',o:"Switched to branch 'main'"}],
+ s:['<b>Ветка (branch)</b> — линия развития проекта. Сейчас мы на основной ветке <code>main</code>.',`<code>git switch -c ${CFG.branch}</code> (или старый вариант <code>git checkout -b ${CFG.branch}</code>) <b>создаёт</b> ветку и переключает на неё. Папка не копируется — появился лишь новый указатель на тот же коммит.`,`Новые коммиты идут в <b>${CFG.branch}</b>, а <b>main</b> остаётся нетронутой. Можно смело экспериментировать.`,`Переключаемся на <b>уже существующую</b> ветку: <code>git switch main</code> (или <code>git checkout main</code>). Флаги <code>-c</code> и <code>-b</code> нужны только для создания. Git подставит в папку файлы выбранной ветки, поэтому правок из ${CFG.branch} в main не видно. Вернуться: <code>git switch ${CFG.branch}</code>.`],
+ e:'Хотим попробовать новую кнопку и не ломать рабочий сайт — пробуем в отдельной ветке и при необходимости переключаемся обратно.'},
+
+/* 12 */
+{t:'12. Шпаргалка по командам',m:'Команды сгруппированы по задачам.',n:1,
+ v:`<div class="flow"><span>✎ правка</span>→<span>git status</span>→<span>git add</span>→<span>git commit</span>→<span>git push</span></div>`+(()=>{const g=[
+   ['loc','🚀 Начало работы',[['git init','начать использовать Git в папке'],['git clone <URL>','если проекта нет локально, клонировать себе копию репозитория']]],
+   ['loc','🔍 Проверка изменений',[['git status','посмотреть состояние изменений'],['git diff','изменения в рабочей папке, ещё не подготовленные к коммиту']]],
+   ['stg','💾 Сохранение',[['git add <файл>','подготовить изменения'],['git add .','подготовить все изменения'],['git commit -m "сообщение"','создать коммит']]],
+   ['com','📜 История',[['git log --oneline','посмотреть краткую историю']]],
+   ['gh','☁️ GitHub',[['git branch -M main','переименовать текущую ветку в main'],['git remote -v','посмотреть адреса удалённых репозиториев'],['git push','отправить коммиты'],['git pull','получить и интегрировать удалённые изменения']]],
+   ['com','🌿 Ветки',[['git switch -c <имя>','создать ветку и переключиться на неё'],['git switch <имя>','переключиться на уже существующую ветку'],['git checkout -b <имя> / git checkout <имя>','старые аналоги этих двух команд']]]];
+   return `<div class="cs">${g.map(x=>`<div class="${x[0]}"><h4>${x[1]}</h4>${x[2].map(c=>`<p><code>${esc(c[0])}</code> — ${c[1]}</p>`).join('')}</div>`).join('')}</div>`})(),
+ c:[null],s:['Весь путь сайта: <code>init</code> → <code>add</code> → <code>commit</code> → <code>remote add</code> → <code>push</code>.'],
+ e:'Повторяющийся цикл в работе: правка → <code>add</code> → <code>commit</code>, а <code>push</code> — когда готов поделиться.'},
+
+/* 13 */
+{t:'13. Проверяем понимание',m:'Семь вопросов. После ответа покажем правильный вариант и объяснение.',n:1,quiz:true,v:'',c:[null],s:[''],
+ e:'Все вопросы — про команды, которые мы выполняли на нашем сайте.'}
+];
+
+const Q=[
+ {q:'Какую команду использовать, чтобы посмотреть изменённые файлы?',o:['git log --oneline','git push','git status','git clone <URL>'],a:2,x:'<code>git status</code> показывает изменённые и подготовленные файлы. <code>git log --oneline</code> показывает историю коммитов.'},
+ {q:'Какая команда подготавливает изменения к коммиту?',o:['git add','git init','git pull','git switch -c'],a:0,x:'<code>git add</code> кладёт изменения в staging area — «коробку» для следующего коммита.'},
+ {q:'Какая команда создаёт коммит?',o:['git add .','git status','git clone <URL>','git commit -m "сообщение"'],a:3,x:'<code>git commit</code> сохраняет подготовленные изменения в локальной истории.'},
+ {q:'Какая команда отправляет коммиты на GitHub?',o:['git pull','git push','git commit','git init'],a:1,x:'<code>git push</code> отправляет локальные коммиты в удалённый репозиторий. <code>pull</code> делает наоборот.'},
+ {q:'Чем Git отличается от GitHub?',o:['Это два названия одной программы','GitHub работает без интернета, а Git — нет','Git — инструмент контроля версий на компьютере, GitHub — онлайн-платформа для хранения репозиториев','Git нужен только для проектов на GitHub'],a:2,x:'Git работает локально и ведёт историю. GitHub хранит удалённые репозитории и помогает работать вместе. Git можно использовать и без GitHub.'},
+ {q:'Какая команда создаёт новую ветку и сразу переключается на неё?',o:['git switch main','git branch -M main','git switch -c feature/button','git push -u origin main'],a:2,x:'<code>git switch -c &lt;имя&gt;</code> создаёт ветку и переключает на неё. Старый аналог — <code>git checkout -b &lt;имя&gt;</code>.'},
+ {q:'Как переключиться на уже существующую ветку main?',o:['git switch main','git switch -c main','git init main','git pull main'],a:0,x:'Для переключения на существующую ветку флаги не нужны: <code>git switch main</code> (или <code>git checkout main</code>). <code>-c</code> создаёт новую ветку, и для уже существующего имени Git выдаст ошибку.'}
+];
+
+/* ---------- движок ---------- */
+let I=0,K=0;
+const root=$('#slide');
+
+function cmdHTML(s){
+  const fmt=x=>x.c.split('\n').map(l=>`<span class="p">$ </span>${esc(l)}`).join('\n')+(x.o?`\n<span class="o">${esc(x.o)}</span>`:'');
+  if(s.acc){
+    const lines=s.c.map((x,i)=>x?`<span ${up(i)}>${fmt(x)}\n</span>`:'').join('');
+    return `<div class="term" ${up(0)}>${lines}</div>`;
+  }
+  return s.c.map((x,i)=>x?`<div class="term" ${d(i)}>${fmt(x)}</div>`:'').join('');
+}
+function draw(){
+  const s=S[I];
+  root.innerHTML=`<h2>${s.t}</h2><p class="main">${s.m}</p><div class="vis">${s.r?s.r(K):s.v}</div>${cmdHTML(s)}${s.s.map((x,i)=>x?`<div class="say" ${d(i)}>${x}</div>`:'').join('')}<div class="ex">📌 <b>В нашем проекте:</b> ${s.e}</div>`;
+  root.querySelectorAll('[data-s]').forEach(e=>e.classList.add('hid'));
+  if(s.quiz)quiz(root.querySelector('.vis'));
+  apply();
+}
+function apply(){
+  const s=S[I];
+  if(s.r)root.querySelector('.vis').innerHTML=s.r(K);
+  root.querySelectorAll('[data-s]').forEach(e=>{
+    const on=e.dataset.s.split(',').includes(String(K));
+    if(on&&e.classList.contains('hid')){e.classList.remove('hid','pop');void e.offsetWidth;e.classList.add('pop')}
+    else if(!on)e.classList.add('hid');
+  });
+  $('#cnt').textContent=`Экран ${I+1} / ${S.length}`;
+  $('#pb').style.width=((I+(K+1)/s.n)/S.length*100)+'%';
+  $('#stp').textContent=s.n>1?`Шаг ${K+1} из ${s.n}`:'';
+  $('#back').disabled=I===0&&K===0;
+  const last=I===S.length-1&&K===s.n-1;
+  $('#next').disabled=last;
+  $('#next').textContent=last?'Конец':'Далее →';
+}
+function next(){const s=S[I];if(K<s.n-1)K++;else if(I<S.length-1){I++;K=0;draw();window.scrollTo({top:0,behavior:'smooth'});return}apply()}
+function back(){if(K>0)K--;else if(I>0){I--;K=S[I].n-1;draw();window.scrollTo({top:0,behavior:'smooth'});return}apply()}
+$('#next').onclick=next;$('#back').onclick=back;
+addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();next()}if(e.key==='ArrowLeft')back()});
+
+/* ---------- квиз ---------- */
+function quiz(box){
+  let q=0,sc=0;
+  const show=()=>{
+    if(q>=Q.length){
+      box.innerHTML=`<div class="res">🎉 Правильных ответов: ${sc} из ${Q.length}<br><button class="pri" id="rs">Пройти ещё раз</button></div>`;
+      $('#rs').onclick=()=>{q=0;sc=0;show()};return;
+    }
+    const x=Q[q];
+    box.innerHTML=`<div class="qz"><div class="mut">Вопрос ${q+1} из ${Q.length}</div><h3>${esc(x.q)}</h3>${x.o.map((o,i)=>`<button class="opt" data-i="${i}">${esc(o)}</button>`).join('')}<div class="fb"></div></div>`;
+    box.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.i;
+      box.querySelectorAll('.opt').forEach(o=>o.disabled=true);
+      box.querySelectorAll('.opt')[x.a].classList.add('ok');
+      if(i===x.a)sc++;else b.classList.add('no');
+      box.querySelector('.fb').innerHTML=`<b>${i===x.a?'✅ Верно!':'❌ Не совсем.'}</b> ${x.x}<br><br><button class="pri" id="qn">${q<Q.length-1?'Дальше':'Результат'}</button>`;
+      $('#qn').onclick=()=>{q++;show()};
+    });
+  };
+  show();
+}
+
+draw();
+</script>
+</body>
+</html>
